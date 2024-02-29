@@ -12,6 +12,7 @@ interface UserDetails {
 }
 
 //Register User
+//This Sends an email to verify their email address
 export const POST = async (request: NextRequest) => {
   const userDetails: UserDetails = await request.json();
   const referrer = request.nextUrl.searchParams.get('referrer');
@@ -53,3 +54,6 @@ export const POST = async (request: NextRequest) => {
 
 //Verify Payment
 export const PATCH = async (request: NextRequest) => {};
+
+//Verify Email
+export const PUT = async (request: NextRequest) => {};
