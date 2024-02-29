@@ -33,5 +33,5 @@ export const sendMail = async (
 export const ratelimit = new Ratelimit({
   redis: kv,
   // 5 requests from the same IP in 10 seconds
-  limiter: Ratelimit.slidingWindow(3, '3 s')
+  limiter: Ratelimit.slidingWindow(2, '60 s')
 });
