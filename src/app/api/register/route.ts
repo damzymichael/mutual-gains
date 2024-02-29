@@ -1,7 +1,7 @@
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import {NextRequest, NextResponse} from 'next/server';
-import {sendMail} from '@/lib/utils';
+import {sendMail, ratelimit} from '@/lib/utils';
 import {SignUp} from '@/email-templates';
 
 interface UserDetails {
@@ -14,6 +14,11 @@ interface UserDetails {
 //Register User
 //This Sends an email to verify their email address
 export const POST = async (request: NextRequest) => {
+  const ip = request.ip ?? '127.0.0.1';
+  const {success, pending, limit, reset, remaining} = await ratelimit.limit(ip);
+  console.log({limit, reset, remaining, success});
+  if (!success) return NextResponse.json('Please retry later');
+
   const userDetails: UserDetails = await request.json();
   const referrer = request.nextUrl.searchParams.get('referrer');
   //!Do password length verification on frontend

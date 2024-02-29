@@ -2,6 +2,8 @@ import {ReactElement, JSXElementConstructor} from 'react';
 import {render} from '@react-email/render';
 import nodemailer from 'nodemailer';
 import env from './env';
+import {Ratelimit} from '@upstash/ratelimit';
+import {kv} from '@vercel/kv';
 
 const transporter = nodemailer.createTransport({
   service: 'Gmail',
@@ -28,3 +30,8 @@ export const sendMail = async (
   return mailResponse;
 };
 
+export const ratelimit = new Ratelimit({
+  redis: kv,
+  // 5 requests from the same IP in 10 seconds
+  limiter: Ratelimit.slidingWindow(3, '3 s')
+});
