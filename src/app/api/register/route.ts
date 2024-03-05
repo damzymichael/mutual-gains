@@ -3,6 +3,8 @@ import bcrypt from 'bcrypt';
 import {NextRequest, NextResponse} from 'next/server';
 import {sendMail, ratelimit} from '@/lib/utils';
 import {SignUp} from '@/email-templates';
+import jwt from 'jsonwebtoken';
+import env from '@/lib/env';
 
 interface UserDetails {
   email: string;
@@ -11,13 +13,29 @@ interface UserDetails {
   phoneNumber: string;
 }
 
+const baseUrl =
+  process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : 'https://mutual-gains.vercel.app';
+
 //Register User
 //This Sends an email to verify their email address
 export const POST = async (request: NextRequest) => {
   const ip = request.ip ?? '127.0.0.1';
-  const {success, pending, limit, reset, remaining} = await ratelimit.limit(ip);
-  console.log({limit, reset, remaining, success});
-  if (!success) return NextResponse.json('Please retry later');
+  //remaining shows retries
+  const {success, reset, remaining} = await ratelimit.limit(ip);
+  if (!success) {
+    const resetTime = new Date(reset);
+    const timeDifferenceSec = Math.ceil(
+      (resetTime.getTime() - new Date().getTime()) / 1000
+    );
+    // const timeDifferenceMinutes = Math.ceil(
+    //   (resetTime.getTime() - new Date().getTime()) / (1000 * 60)
+    // );
+    return NextResponse.json(`Please retry in ${timeDifferenceSec}s`, {
+      status: 429
+    });
+  }
 
   const userDetails: UserDetails = await request.json();
   const referrer = request.nextUrl.searchParams.get('referrer');
@@ -42,13 +60,18 @@ export const POST = async (request: NextRequest) => {
         referredBy: referrer || null
       }
     });
+    const {id, password, fullName} = newUser;
 
+    //send email verification link
+    const secret = env.JWT_SECRET + password;
+    const token = jwt.sign({id}, secret, {expiresIn: '20m'});
+    const emailVerifyUrl = `${baseUrl}/verify-email?userId=${id}&token=${token}`;
+    
     sendMail(
       newUser.email,
       'Welcome to mutual earnings',
-      SignUp({name: newUser.fullName})
+      SignUp({name: fullName.split(' ')[0], emailVerifyUrl})
     );
-
     return NextResponse.json('Sign up successful', {status: 200});
   } catch (error: any) {
     return NextResponse.json('Could not sign you up ' + error.message, {
@@ -59,6 +82,3 @@ export const POST = async (request: NextRequest) => {
 
 //Verify Payment
 export const PATCH = async (request: NextRequest) => {};
-
-//Verify Email
-export const PUT = async (request: NextRequest) => {};
