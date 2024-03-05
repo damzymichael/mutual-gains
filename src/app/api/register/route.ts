@@ -67,11 +67,14 @@ export const POST = async (request: NextRequest) => {
     const token = jwt.sign({id}, secret, {expiresIn: '20m'});
     const emailVerifyUrl = `${baseUrl}/verify-email?userId=${id}&token=${token}`;
     
-    sendMail(
+    const mailResult = await sendMail(
       newUser.email,
       'Welcome to mutual earnings',
       SignUp({name: fullName.split(' ')[0], emailVerifyUrl})
     );
+
+    console.log(mailResult)
+    
     return NextResponse.json('Sign up successful', {status: 200});
   } catch (error: any) {
     return NextResponse.json('Could not sign you up ' + error.message, {
