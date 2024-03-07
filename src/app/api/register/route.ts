@@ -1,7 +1,7 @@
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import {NextRequest, NextResponse} from 'next/server';
-import {sendMail, ratelimit} from '@/lib/utils';
+import {sendMail, rateLimiter} from '@/lib/utils';
 import {SignUp} from '@/email-templates';
 import jwt from 'jsonwebtoken';
 import env from '@/lib/env';
@@ -18,8 +18,11 @@ const baseUrl =
     ? 'http://localhost:3000'
     : 'https://mutual-gains.vercel.app';
 
-//Register User
-//This Sends an email to verify their email address
+/**
+ * Allow only 2 requests from the same IP in 120 seconds
+ */
+const ratelimit = rateLimiter(2, '120 s');
+
 export const POST = async (request: NextRequest) => {
   const ip = request.ip ?? '127.0.0.1';
   //remaining shows retries
@@ -80,6 +83,3 @@ export const POST = async (request: NextRequest) => {
     });
   }
 };
-
-//Verify Payment
-export const PATCH = async (request: NextRequest) => {};

@@ -5,6 +5,62 @@ import env from './env';
 import {Ratelimit} from '@upstash/ratelimit';
 import {kv} from '@vercel/kv';
 
+export function generateInvoiceNumber() {
+  // Generate a random number between 1000 and 9999
+  const randomNumber = Math.floor(Math.random() * 9000) + 1000;
+
+  // Generate the current date in the format YYYYMMDD
+  const currentDate = new Date();
+  const formattedDate =
+    currentDate.getFullYear() +
+    ('0' + (currentDate.getMonth() + 1)).slice(-2) +
+    ('0' + currentDate.getDate()).slice(-2);
+
+  // Concatenate the date and random number to create the invoice number
+  const invoiceNumber = formattedDate + randomNumber;
+
+  return invoiceNumber;
+}
+
+export function generateInvoiceWithId(id: string) {
+  const currentDate = new Date();
+  const formattedDate =
+    currentDate.getFullYear() +
+    ('0' + (currentDate.getMonth() + 1)).slice(-2) +
+    ('0' + currentDate.getDate()).slice(-2);
+
+  return id + formattedDate;
+}
+
+interface AnyObject {
+  [key: string]: any;
+}
+
+export function replaceKeys<T extends AnyObject>(
+  obj: T,
+  keyMap: {[key: string]: string},
+  additionalKeys: {[key: string]: any}
+): T {
+  const newObj: Partial<T> = {};
+
+  // Copy original object with replaced keys
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const newKey = keyMap[key] || key;
+      newObj[newKey as keyof T] = obj[key];
+    }
+  }
+
+  // Add additional keys and values
+  for (const key in additionalKeys) {
+    if (Object.prototype.hasOwnProperty.call(additionalKeys, key)) {
+      newObj[key as keyof T] = additionalKeys[key];
+    }
+  }
+
+  return newObj as T;
+}
+
 const transporter = nodemailer.createTransport({
   service: 'Gmail',
   host: 'smtp.gmai.com',
@@ -30,8 +86,14 @@ export const sendMail = async (
   return mailResponse;
 };
 
-export const ratelimit = new Ratelimit({
-  redis: kv,
-  // 2 requests from the same IP in 120 seconds
-  limiter: Ratelimit.slidingWindow(2, '120 s')
-});
+type Unit = 'ms' | 's' | 'm' | 'h' | 'd';
+type Duration = `${number} ${Unit}` | `${number}${Unit}`;
+
+export const rateLimiter = (numberOfRequest: number, timeFrame: Duration) => {
+  const ratelimit = new Ratelimit({
+    redis: kv,
+    limiter: Ratelimit.slidingWindow(numberOfRequest, timeFrame)
+  });
+
+  return ratelimit;
+};
