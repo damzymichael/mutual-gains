@@ -10,7 +10,7 @@ export default function SendMailButton({email}: {email: string}) {
     <>
       <button
         className='p-2 bg-blue-900 rounded-md text-white mb-2 mx-auto block'
-        onClick={async () => {
+        onClick={() => {
           startTransition(async () => {
             const response = await resendVerificationMail(email);
           });

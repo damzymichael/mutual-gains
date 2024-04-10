@@ -63,7 +63,7 @@ export function replaceKeys<T extends AnyObject>(
 
 const transporter = nodemailer.createTransport({
   service: 'Gmail',
-  host: 'smtp.gmai.com',
+  host: 'smtp.gmail.com',
   port: 465,
   secure: true,
   auth: {
