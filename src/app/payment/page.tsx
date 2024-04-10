@@ -37,7 +37,7 @@ export default async function Payment({searchParams}: PaymentProps) {
     lastName: fullName[1],
     phone: user.phoneNumber,
     publicKey: env.PT_PUBLIC_KEY,
-    meta: {haha: 'haha', hoho: 'hoho'}
+    metadata: {haha: 'haha', hoho: 'hoho', custom_fields: []}
   };
 
   return (
